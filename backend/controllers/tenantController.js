@@ -4,6 +4,7 @@ import Notification from '../models/Notification.js'
 import Property from '../models/Property.js'
 import RentPayment from '../models/RentPayment.js'
 import User from '../models/User.js'
+import Message from '../models/Message.js'
 
 export const tenantIdValidation = [param('id').isMongoId().withMessage('Invalid tenant id')]
 
@@ -77,6 +78,7 @@ export const removeTenant = async (req, res) => {
     tenantId: req.params.id,
     propertyId: property._id,
   })
+  await Message.deleteMany({ propertyId: property._id })
 
   await Notification.create({
     userId: req.params.id,

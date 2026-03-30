@@ -2,6 +2,8 @@ import { body, param } from 'express-validator'
 import Application from '../models/Application.js'
 import Notification from '../models/Notification.js'
 import Property from '../models/Property.js'
+import User from '../models/User.js'
+import { sendEmail } from '../utils/emailService.js'
 
 export const applicationValidation = [
   body('propertyId').isMongoId().withMessage('Valid property is required'),
@@ -151,6 +153,25 @@ export const approveApplication = async (req, res) => {
       })),
     ])
 
+    const participants = await User.find({ _id: { $in: [application.tenantId, ...rejectedApplications.map((item) => item.tenantId)] } })
+    const approvedTenant = participants.find((item) => item._id.toString() === application.tenantId.toString())
+    await sendEmail({
+      to: approvedTenant?.email,
+      subject: 'Application Approved',
+      text: `Your application for ${property.title} was approved.`,
+    })
+
+    await Promise.all(
+      rejectedApplications.map((item) => {
+        const tenant = participants.find((candidate) => candidate._id.toString() === item.tenantId.toString())
+        return sendEmail({
+          to: tenant?.email,
+          subject: 'Application Rejected',
+          text: `Your application for ${property.title} was rejected.`,
+        })
+      })
+    )
+
     res.json({ message: 'Application approved successfully' })
   } catch (error) {
     res.status(500).json({ message: 'Failed to approve application', error: error.message })
@@ -175,6 +196,13 @@ export const rejectApplication = async (req, res) => {
     userId: application.tenantId,
     message: `Your application for ${property.title} was rejected.`,
     type: 'application',
+  })
+
+  const tenant = await User.findById(application.tenantId)
+  await sendEmail({
+    to: tenant?.email,
+    subject: 'Application Rejected',
+    text: `Your application for ${property.title} was rejected.`,
   })
 
   res.json({ message: 'Application rejected successfully' })

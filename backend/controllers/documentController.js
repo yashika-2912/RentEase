@@ -1,6 +1,8 @@
 import { param } from 'express-validator'
 import LeaseDocument from '../models/LeaseDocument.js'
 import Property from '../models/Property.js'
+import User from '../models/User.js'
+import { sendEmail } from '../utils/emailService.js'
 
 export const propertyParamValidation = [param('propertyId').isMongoId().withMessage('Invalid property id')]
 
@@ -39,6 +41,13 @@ export const uploadLease = async (req, res) => {
     tenantId,
     landlordId: req.user._id,
     fileUrl: `/uploads/leases/${req.file.filename}`,
+  })
+
+  const tenant = await User.findById(tenantId)
+  await sendEmail({
+    to: tenant?.email,
+    subject: 'Lease Uploaded',
+    text: `A new lease document has been uploaded for ${property.title}.`,
   })
 
   res.status(201).json(document)

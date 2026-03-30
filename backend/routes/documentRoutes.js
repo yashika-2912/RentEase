@@ -1,4 +1,5 @@
 import express from 'express'
+import { fileURLToPath } from 'url'
 import multer from 'multer'
 import path from 'path'
 import { body } from 'express-validator'
@@ -6,11 +7,14 @@ import { getLeaseByProperty, getMyLease, propertyParamValidation, uploadLease } 
 import protect from '../middleware/authMiddleware.js'
 import { isLandlord, isTenant } from '../middleware/roleMiddleware.js'
 import validateRequest from '../middleware/validateRequest.js'
+import asyncHandler from '../utils/asyncHandler.js'
 
 const router = express.Router()
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, path.join(process.cwd(), 'backend', 'uploads', 'leases')),
+  destination: (_req, _file, cb) => cb(null, path.join(__dirname, '..', 'uploads', 'leases')),
   filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`),
 })
 
@@ -33,9 +37,9 @@ router.post(
     body('tenantId').isMongoId().withMessage('Valid tenant is required'),
   ],
   validateRequest,
-  uploadLease
+  asyncHandler(uploadLease)
 )
-router.get('/tenant/mine', protect, isTenant, getMyLease)
-router.get('/:propertyId', protect, isLandlord, propertyParamValidation, validateRequest, getLeaseByProperty)
+router.get('/tenant/mine', protect, isTenant, asyncHandler(getMyLease))
+router.get('/:propertyId', protect, isLandlord, propertyParamValidation, validateRequest, asyncHandler(getLeaseByProperty))
 
 export default router

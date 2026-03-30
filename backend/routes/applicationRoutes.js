@@ -13,14 +13,15 @@ import {
 import protect from '../middleware/authMiddleware.js'
 import { isLandlord, isTenant } from '../middleware/roleMiddleware.js'
 import validateRequest from '../middleware/validateRequest.js'
+import asyncHandler from '../utils/asyncHandler.js'
 
 const router = express.Router()
 
-router.post('/', protect, isTenant, applicationValidation, validateRequest, submitApplication)
-router.get('/my', protect, isTenant, getMyApplications)
-router.get('/landlord/all', protect, isLandlord, getLandlordApplications)
-router.get('/property/:propertyId', protect, isLandlord, [param('propertyId').isMongoId().withMessage('Invalid property id')], validateRequest, getPropertyApplications)
-router.put('/:id/approve', protect, isLandlord, applicationIdValidation, validateRequest, approveApplication)
-router.put('/:id/reject', protect, isLandlord, applicationIdValidation, validateRequest, rejectApplication)
+router.post('/', protect, isTenant, applicationValidation, validateRequest, asyncHandler(submitApplication))
+router.get('/my', protect, isTenant, asyncHandler(getMyApplications))
+router.get('/landlord/all', protect, isLandlord, asyncHandler(getLandlordApplications))
+router.get('/property/:propertyId', protect, isLandlord, [param('propertyId').isMongoId().withMessage('Invalid property id')], validateRequest, asyncHandler(getPropertyApplications))
+router.put('/:id/approve', protect, isLandlord, applicationIdValidation, validateRequest, asyncHandler(approveApplication))
+router.put('/:id/reject', protect, isLandlord, applicationIdValidation, validateRequest, asyncHandler(rejectApplication))
 
 export default router

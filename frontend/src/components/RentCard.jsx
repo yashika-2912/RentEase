@@ -1,4 +1,5 @@
 import formatDate from '../utils/formatDate'
+import { FiCalendar, FiCheckCircle, FiCreditCard } from 'react-icons/fi'
 
 const RentCard = ({ rent, action }) => (
   <article className="card">
@@ -9,9 +10,11 @@ const RentCard = ({ rent, action }) => (
       </div>
       <span className={`status-pill ${rent.status}`}>{rent.status}</span>
     </div>
-    <p>Amount: Rs. {rent.amount}</p>
-    <p>Due: {formatDate(rent.dueDate)}</p>
-    <p>Paid At: {formatDate(rent.paidAt)}</p>
+    <div className="detail-stack">
+      <p className="icon-line"><FiCreditCard /> Amount: Rs. {rent.amount}</p>
+      <p className="icon-line"><FiCalendar /> Due: {formatDate(rent.dueDate)}</p>
+      <p className="icon-line"><FiCheckCircle /> Paid At: {formatDate(rent.paidAt)}</p>
+    </div>
     {action}
   </article>
 )

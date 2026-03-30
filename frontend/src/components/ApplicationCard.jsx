@@ -1,4 +1,5 @@
 import formatDate from '../utils/formatDate'
+import { FiBriefcase, FiCalendar, FiPhone, FiTrendingUp } from 'react-icons/fi'
 
 const ApplicationCard = ({ application, actions }) => (
   <article className="card">
@@ -9,11 +10,13 @@ const ApplicationCard = ({ application, actions }) => (
       </div>
       <span className={`status-pill ${application.status}`}>{application.status}</span>
     </div>
-    <p>Occupation: {application.occupation}</p>
-    <p>Income: Rs. {application.monthlyIncome}</p>
-    <p>Phone: {application.phone}</p>
+    <div className="detail-stack">
+      <p className="icon-line"><FiBriefcase /> Occupation: {application.occupation}</p>
+      <p className="icon-line"><FiTrendingUp /> Income: Rs. {application.monthlyIncome}</p>
+      <p className="icon-line"><FiPhone /> Phone: {application.phone}</p>
+    </div>
     {application.message && <p className="muted-line">{application.message}</p>}
-    <p className="meta-text">Applied on {formatDate(application.appliedAt)}</p>
+    <p className="meta-text icon-line"><FiCalendar /> Applied on {formatDate(application.appliedAt)}</p>
     {actions}
   </article>
 )

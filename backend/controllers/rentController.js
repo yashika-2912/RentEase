@@ -2,6 +2,9 @@ import { body, param } from 'express-validator'
 import Notification from '../models/Notification.js'
 import Property from '../models/Property.js'
 import RentPayment from '../models/RentPayment.js'
+import User from '../models/User.js'
+import { sendEmail } from '../utils/emailService.js'
+import { generateReceipt } from '../utils/receiptGenerator.js'
 
 export const rentValidation = [
   body('propertyId').isMongoId().withMessage('Valid property is required'),
@@ -50,6 +53,13 @@ export const createRentEntry = async (req, res) => {
     userId: req.body.tenantId,
     message: `A new rent payment for ${req.body.month} is now due.`,
     type: 'rent',
+  })
+
+  const tenant = await User.findById(req.body.tenantId)
+  await sendEmail({
+    to: tenant?.email,
+    subject: 'Rent Due Notice',
+    text: `A new rent payment for ${req.body.month} is now due.`,
   })
 
   res.status(201).json(rentPayment)
@@ -106,12 +116,27 @@ export const verifyRentPayment = async (req, res) => {
   }
 
   rentPayment.verifiedAt = new Date()
+  const [tenant, property] = await Promise.all([
+    User.findById(rentPayment.tenantId),
+    Property.findById(rentPayment.propertyId),
+  ])
+  rentPayment.receiptUrl = await generateReceipt({
+    rentPayment,
+    tenantName: tenant?.name || 'Tenant',
+    propertyTitle: property?.title || 'Property',
+  })
   await rentPayment.save()
 
   await Notification.create({
     userId: rentPayment.tenantId,
     message: `Your rent payment for ${rentPayment.month} was verified.`,
     type: 'rent',
+  })
+
+  await sendEmail({
+    to: tenant?.email,
+    subject: 'Rent Payment Verified',
+    text: `Your rent payment for ${rentPayment.month} was verified. Receipt generated successfully.`,
   })
 
   res.json({ message: 'Rent payment verified', rentPayment })
